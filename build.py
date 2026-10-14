@@ -16,6 +16,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+import calc
+
 ROOT = Path(__file__).parent
 OUT = ROOT / "dist"
 API = "https://api.frankfurter.dev/v1"
@@ -110,6 +112,11 @@ table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}td,t
 .links{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:15px}
 svg{width:100%;height:auto}.ad{margin:16px 0;min-height:90px}
 footer{padding:24px 16px;color:var(--muted);font-size:13px}
+nav{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:15px;margin-top:6px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.form label{display:flex;flex-direction:column;font-size:14px;color:var(--muted)}
+.form input,.form select{font-size:17px;padding:8px 10px;margin-top:4px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);width:100%}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:16px}.res div{background:var(--bg);border-radius:8px;padding:10px 12px}.res b{display:block;font-size:20px}
+.scroll{overflow-x:auto}
 """
 
 
@@ -125,9 +132,10 @@ def layout(cfg, title, desc, path, body):
 <title>{esc(title)}</title><meta name="description" content="{esc(desc)}">
 <link rel="canonical" href="{esc(url)}">{ads}
 <style>{CSS}</style></head><body>
-<header><a class="logo" href="/">{esc(cfg["site_name"])}</a></header>
+<header><a class="logo" href="/">{esc(cfg["site_name"])}</a>
+<nav><a href="/">汇率换算</a><a href="/fangdai/">房贷计算器</a><a href="/geshui/">个税计算器</a><a href="/nianzhongjiang/">年终奖个税</a></nav></header>
 <main>{body}</main>
-<footer>汇率数据来源:欧洲央行(ECB)参考汇率,每个工作日更新,仅供参考,不构成交易建议。实际兑换请以银行报价为准。</footer>
+<footer>汇率数据来源:欧洲央行(ECB)参考汇率,每个工作日更新。房贷、个税计算结果按公开公式估算。本站所有数据仅供参考,不构成任何建议,实际以银行、税务机关为准。</footer>
 </body></html>"""
 
 
@@ -232,6 +240,7 @@ def home_page(cfg, dates, rates):
 <div class="card"><h1>今日汇率查询与换算</h1><p class="muted">数据日期 {dates[-1]},每个工作日自动更新。</p>
 <table><tr><th>币种</th><th>1 单位兑{name(h)}</th><th>涨跌</th></tr>{rows}</table></div>
 {ad_slot(cfg)}
+<div class="card"><h2>实用计算器</h2><div class="links"><a href="/fangdai/">房贷计算器(等额本息/本金)</a><a href="/geshui/">工资个税计算器</a><a href="/nianzhongjiang/">年终奖个税计算器</a></div></div>
 <div class="card"><h2>全部货币对</h2><div class="links">{allpairs}</div></div>"""
     return f"今日汇率查询 - 人民币汇率换算({dates[-1]})", f"实时查询美元、欧元、日元、港币等{len(cfg['currencies'])}种货币兑人民币汇率,提供在线换算与走势,每日自动更新。", body
 
@@ -257,6 +266,8 @@ def main():
     OUT.mkdir()
     urls = []
     write(cfg, "/", home_page(cfg, dates, rates), urls)
+    for path, page in calc.pages(cfg, ad_slot(cfg)):
+        write(cfg, path, page, urls)
     cur, h = cfg["currencies"], cfg["home_currency"]
     for a in cur:
         for b in cur:
