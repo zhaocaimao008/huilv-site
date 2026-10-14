@@ -17,6 +17,7 @@ import urllib.request
 from pathlib import Path
 
 import calc
+import finance
 
 ROOT = Path(__file__).parent
 OUT = ROOT / "dist"
@@ -141,7 +142,7 @@ def layout(cfg, title, desc, path, body):
 <link rel="canonical" href="{esc(url)}">{ads}
 <style>{CSS}</style></head><body>
 <header><a class="logo" href="/">{esc(cfg["site_name"])}</a>
-<nav><a href="/">汇率换算</a><a href="/fangdai/">房贷计算器</a><a href="/geshui/">个税计算器</a><a href="/nianzhongjiang/">年终奖个税</a></nav></header>
+<nav><a href="/">汇率换算</a><a href="/fangdai/">房贷计算器</a><a href="/geshui/">个税计算器</a><a href="/nianzhongjiang/">年终奖个税</a><a href="/cunkuan/">存款利息</a><a href="/dingtou/">定投复利</a><a href="/tiqian/">提前还贷</a><a href="/gongjijin/">公积金贷款</a></nav></header>
 <main>{body}</main>
 <footer>汇率数据来源:欧洲央行(ECB)参考汇率,每个工作日更新。房贷、个税计算结果按公开公式估算。本站所有数据仅供参考,不构成任何建议,实际以银行、税务机关为准。{network_html(cfg)}</footer>
 </body></html>"""
@@ -248,7 +249,7 @@ def home_page(cfg, dates, rates):
 <div class="card"><h1>今日汇率查询与换算</h1><p class="muted">数据日期 {dates[-1]},每个工作日自动更新。</p>
 <table><tr><th>币种</th><th>1 单位兑{name(h)}</th><th>涨跌</th></tr>{rows}</table></div>
 {ad_slot(cfg)}
-<div class="card"><h2>实用计算器</h2><div class="links"><a href="/fangdai/">房贷计算器(等额本息/本金)</a><a href="/geshui/">工资个税计算器</a><a href="/nianzhongjiang/">年终奖个税计算器</a></div></div>
+<div class="card"><h2>实用计算器</h2><div class="links"><a href="/fangdai/">房贷计算器(等额本息/本金)</a><a href="/geshui/">工资个税计算器</a><a href="/nianzhongjiang/">年终奖个税计算器</a><a href="/cunkuan/">存款利息计算器</a><a href="/dingtou/">基金定投/复利计算器</a><a href="/tiqian/">提前还贷计算器</a><a href="/gongjijin/">公积金贷款计算器</a></div></div>
 <div class="card"><h2>全部货币对</h2><div class="links">{allpairs}</div></div>"""
     return f"今日汇率查询 - 人民币汇率换算({dates[-1]})", f"实时查询美元、欧元、日元、港币等{len(cfg['currencies'])}种货币兑人民币汇率,提供在线换算与走势,每日自动更新。", body
 
@@ -275,6 +276,8 @@ def main():
     urls = []
     write(cfg, "/", home_page(cfg, dates, rates), urls)
     for path, page in calc.pages(cfg, ad_slot(cfg)):
+        write(cfg, path, page, urls)
+    for path, page in finance.pages(cfg, ad_slot(cfg)):
         write(cfg, path, page, urls)
     cur, h = cfg["currencies"], cfg["home_currency"]
     for a in cur:
