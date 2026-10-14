@@ -2,6 +2,13 @@
   "site_name": "今日汇率换算",
   "base_url": "https://718168.com",
   "adsense_client": "",
+  "network": [
+    {"name": "汇率换算", "url": "https://718168.com"},
+    {"name": "万年历", "url": "https://rili.718168.com"},
+    {"name": "单位换算", "url": "https://saylian.com"},
+    {"name": "世界时间", "url": "https://liaotown.com"},
+    {"name": "AI开源雷达", "url": "https://ai427.com"}
+  ],
   "history_days": 30,
   "home_currency": "CNY",
   "currencies": ["CNY", "USD", "EUR", "JPY", "HKD", "GBP", "KRW", "AUD", "CAD", "SGD", "THB", "MYR", "CHF", "NZD"],

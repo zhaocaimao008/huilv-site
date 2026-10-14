@@ -93,6 +93,14 @@ def fmt_amt(n):
 def esc(s):
     return html.escape(str(s))
 
+def network_html(cfg):
+    """页脚"更多实用工具":同系列网站互相链接(列表见 config.json 的 network)。"""
+    sites = [s for s in cfg.get("network", []) if s["url"].rstrip("/") != cfg["base_url"].rstrip("/")]
+    if not sites:
+        return ""
+    return "<br>更多实用工具:" + " · ".join(f'<a href="{esc(s["url"])}">{esc(s["name"])}</a>' for s in sites)
+
+
 
 # ---------- 页面模板 ----------
 
@@ -135,7 +143,7 @@ def layout(cfg, title, desc, path, body):
 <header><a class="logo" href="/">{esc(cfg["site_name"])}</a>
 <nav><a href="/">汇率换算</a><a href="/fangdai/">房贷计算器</a><a href="/geshui/">个税计算器</a><a href="/nianzhongjiang/">年终奖个税</a></nav></header>
 <main>{body}</main>
-<footer>汇率数据来源:欧洲央行(ECB)参考汇率,每个工作日更新。房贷、个税计算结果按公开公式估算。本站所有数据仅供参考,不构成任何建议,实际以银行、税务机关为准。</footer>
+<footer>汇率数据来源:欧洲央行(ECB)参考汇率,每个工作日更新。房贷、个税计算结果按公开公式估算。本站所有数据仅供参考,不构成任何建议,实际以银行、税务机关为准。{network_html(cfg)}</footer>
 </body></html>"""
 
 
