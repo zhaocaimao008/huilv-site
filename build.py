@@ -12,6 +12,7 @@ import math
 import random
 import shutil
 import sys
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -241,7 +242,10 @@ def write(cfg, path, page, urls):
     title, desc, body = page
     f = OUT / path.strip("/") / "index.html"
     f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(layout(cfg, title, desc, path, body), encoding="utf-8")
+    # 站点部署在子路径下(如 github.io/huilv-site)时,给站内链接加前缀
+    prefix = urllib.parse.urlparse(cfg["base_url"]).path.rstrip("/")
+    page_html = layout(cfg, title, desc, path, body).replace('href="/', f'href="{prefix}/')
+    f.write_text(page_html, encoding="utf-8")
     urls.append(path)
 
 
@@ -273,7 +277,7 @@ def main():
         pub = cfg["adsense_client"].replace("ca-", "")
         (OUT / "ads.txt").write_text(f"google.com, {pub}, DIRECT, f08c47fec0942fa0\n", encoding="utf-8")
     domain = base.split("://", 1)[-1]
-    if domain and "example.com" not in domain:
+    if domain and "/" not in domain and "example.com" not in domain and not domain.endswith("github.io"):
         (OUT / "CNAME").write_text(domain + "\n", encoding="utf-8")
     print(f"生成 {len(urls)} 个页面,数据日期 {dates[-1]}")
 
