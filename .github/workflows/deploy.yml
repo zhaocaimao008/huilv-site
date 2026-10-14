@@ -1,0 +1,38 @@
+name: 每日自动更新并发布
+
+on:
+  schedule:
+    - cron: "30 16 * * 1-5"   # 每个工作日 UTC 16:30(北京时间 00:30),欧洲央行约 14:00 UTC 发布当日汇率
+  workflow_dispatch:          # 支持在 GitHub 网页/手机上手动点击运行
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 抓取汇率并生成网站(失败自动重试)
+        run: |
+          for i in 1 2 3; do python3 build.py && exit 0; echo "第 $i 次失败,60 秒后重试"; sleep 60; done; exit 1
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deploy
+        uses: actions/deploy-pages@v4
