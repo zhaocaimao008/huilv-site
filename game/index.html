@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d71bb" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <title>冲天塔</title>
+  <style>
+    :root {
+      --ink: #0b1830;
+      --muted: #51637d;
+      --panel: rgba(255,255,255,.91);
+      --panel-edge: rgba(255,255,255,.65);
+      --button: #ff4f3d;
+      --button-ink: #fff;
+      --secondary: #0d71bb;
+      --shadow: rgba(10,28,58,.22);
+      --ad: rgba(255,255,255,.56);
+      --focus: #ffd23f;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #f6f8ff;
+        --muted: #c3cce0;
+        --panel: rgba(9,18,38,.9);
+        --panel-edge: rgba(255,255,255,.16);
+        --button: #ff624f;
+        --button-ink: #fff;
+        --secondary: #4bb7ff;
+        --shadow: rgba(0,0,0,.42);
+        --ad: rgba(5,12,28,.58);
+        --focus: #ffe27a;
+      }
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+    body {
+      background: #0d71bb;
+      color: var(--ink);
+      font-family: ui-rounded, "SF Pro Rounded", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      touch-action: none;
+      user-select: none;
+    }
+    #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+    .safe-ui { position: fixed; inset: 0; pointer-events: none; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+    .hud {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .hud.visible { opacity: 1; transform: none; }
+    .level-pill, .combo-pill, .mute {
+      border: 1px solid rgba(255,255,255,.35);
+      background: rgba(4,23,52,.35);
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,.3);
+      box-shadow: 0 5px 20px rgba(0,0,0,.12);
+      backdrop-filter: blur(8px);
+    }
+    .level-pill { justify-self: start; padding: 8px 11px; border-radius: 9px; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+    .score-wrap { text-align: center; color: white; text-shadow: 0 2px 7px rgba(0,0,0,.25); }
+    .score-label { display: block; font-size: 10px; font-weight: 800; letter-spacing: .18em; opacity: .78; }
+    #score { display: block; font-size: clamp(32px, 9vw, 54px); line-height: .98; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .combo-pill {
+      justify-self: end;
+      margin-right: 44px;
+      padding: 8px 11px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #fff3a8;
+      opacity: 0;
+      transform: scale(.75);
+      transition: .16s ease;
+    }
+    .combo-pill.visible { opacity: 1; transform: scale(1); }
+    .mute {
+      pointer-events: auto;
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      cursor: pointer;
+      font-size: 17px;
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: max(22px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+      pointer-events: auto;
+      transition: opacity .22s ease, visibility .22s ease;
+    }
+    .overlay.hidden { display: none; opacity: 0; visibility: hidden; pointer-events: none; }
+    .panel {
+      width: min(100%, 390px);
+      max-height: min(720px, 94vh);
+      background: var(--panel);
+      border: 1px solid var(--panel-edge);
+      border-radius: 28px 28px 16px 16px;
+      box-shadow: 0 22px 65px var(--shadow);
+      padding: 28px 22px 16px;
+      text-align: center;
+      backdrop-filter: blur(18px) saturate(1.1);
+      overflow: auto;
+      touch-action: pan-y;
+    }
+    .tower-mark { width: 64px; height: 76px; margin: 0 auto 8px; position: relative; filter: drop-shadow(0 7px 7px rgba(20,50,90,.18)); }
+    .tower-mark span { display: block; height: 13px; margin: 0 auto 3px; transform: skewY(-3deg); box-shadow: inset 0 3px rgba(255,255,255,.35); }
+    .tower-mark span:nth-child(1) { width: 30px; background: #ff5143; }
+    .tower-mark span:nth-child(2) { width: 40px; background: #ff9f31; }
+    .tower-mark span:nth-child(3) { width: 48px; background: #f5cc3f; }
+    .tower-mark span:nth-child(4) { width: 56px; background: #34b989; }
+    .tower-mark span:nth-child(5) { width: 64px; background: #188fd0; }
+    h1 { margin: 0; font-size: clamp(42px, 13vw, 66px); letter-spacing: -.07em; line-height: 1; font-weight: 950; }
+    .tagline { margin: 13px 0 20px; color: var(--muted); font-size: 15px; font-weight: 650; }
+    .best-line { margin: 0 0 17px; color: var(--secondary); font-weight: 900; }
+    .best-line b { font-size: 26px; margin: 0 4px; font-variant-numeric: tabular-nums; }
+    button { font: inherit; }
+    .primary, .secondary, .reward {
+      width: 100%; min-height: 52px; border: 0; cursor: pointer; font-weight: 900; border-radius: 13px; transition: transform .08s ease, filter .16s ease; touch-action: manipulation;
+    }
+    .primary { background: var(--button); color: var(--button-ink); box-shadow: 0 9px 0 #c9362d, 0 14px 25px rgba(213,52,40,.23); font-size: 18px; }
+    .primary:active { transform: translateY(5px); box-shadow: 0 4px 0 #c9362d; }
+    .secondary { margin-top: 12px; border: 2px solid color-mix(in srgb, var(--secondary) 64%, transparent); color: var(--secondary); background: transparent; }
+    .reward { margin-top: 12px; background: color-mix(in srgb, var(--focus) 74%, white); color: #402d00; border: 1px solid rgba(116,80,0,.2); }
+    .reward[disabled] { opacity: .45; cursor: default; }
+    .hint { display: flex; justify-content: center; gap: 12px; margin: 21px 0 16px; color: var(--muted); font-size: 12px; font-weight: 700; }
+    .hint span { display: inline-flex; align-items: center; gap: 5px; }
+    .tap-icon { width: 19px; height: 24px; border: 2px solid currentColor; border-radius: 10px; display: inline-block; position: relative; }
+    .tap-icon::after { content: ""; position: absolute; width: 3px; height: 6px; border-radius: 3px; background: currentColor; top: 4px; left: 6px; }
+    .ad-slot { margin-top: 14px; min-height: 42px; display: grid; place-items: center; border: 1px dashed color-mix(in srgb, var(--muted) 38%, transparent); border-radius: 8px; background: var(--ad); color: var(--muted); font-size: 10px; letter-spacing: .12em; }
+    .over-kicker { margin: 0 0 5px; color: var(--button); font-weight: 950; letter-spacing: .12em; font-size: 12px; }
+    .over-title { font-size: 34px; margin: 0; font-weight: 950; }
+    .final-score { margin: 22px 0 4px; font-size: clamp(62px, 20vw, 92px); line-height: .9; font-weight: 950; letter-spacing: -.06em; color: var(--secondary); font-variant-numeric: tabular-nums; }
+    .final-label { color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .18em; }
+    .result-meta { display: flex; justify-content: center; gap: 18px; margin: 21px 0; }
+    .result-meta div { min-width: 90px; }
+    .result-meta span { display: block; color: var(--muted); font-size: 11px; font-weight: 750; }
+    .result-meta b { display: block; margin-top: 2px; font-size: 21px; }
+    .record { display: none; margin: 12px auto -8px; width: fit-content; padding: 5px 9px; border-radius: 7px; background: #ffe053; color: #392c00; font-size: 12px; font-weight: 950; transform: rotate(-2deg); }
+    .record.visible { display: block; }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(28px, calc(env(safe-area-inset-bottom) + 18px));
+      transform: translate(-50%, 18px);
+      width: max-content;
+      max-width: calc(100vw - 36px);
+      padding: 11px 16px;
+      background: rgba(7,15,30,.9);
+      color: white;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: .2s ease;
+      z-index: 20;
+      text-align: center;
+    }
+    .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+    @media (max-height: 610px) {
+      .panel { padding-top: 19px; }
+      .tower-mark { display: none; }
+      h1 { font-size: 44px; }
+      .tagline { margin: 9px 0 13px; }
+      .hint { margin: 15px 0 10px; }
+      .final-score { font-size: 56px; margin-top: 13px; }
+      .result-meta { margin: 14px 0; }
+      .ad-slot { min-height: 32px; }
+    }
+    @media (min-width: 700px) {
+      .panel { padding: 32px 28px 18px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" aria-label="冲天塔游戏画布"></canvas>
+
+  <div class="safe-ui">
+    <div id="hud" class="hud" aria-live="polite">
+      <div id="level" class="level-pill">第 0 层</div>
+      <div class="score-wrap"><span class="score-label">得分</span><span id="score">0</span></div>
+      <div id="combo" class="combo-pill">连击 ×2</div>
+    </div>
+  </div>
+  <button id="mute" class="mute" aria-label="关闭声音" title="声音开关">♫</button>
+
+  <section id="startScreen" class="overlay" aria-labelledby="title">
+    <div class="panel">
+      <div class="tower-mark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <h1 id="title">冲天塔</h1>
+      <p class="tagline">点一下，落方块，叠得越高分越高</p>
+      <p class="best-line">本次最高 <b id="startBest">0</b> 分</p>
+      <button id="startBtn" class="primary">点击开始</button>
+      <div class="hint"><span><i class="tap-icon" aria-hidden="true"></i> 点击屏幕</span><span>或按空格键</span></div>
+      <div class="ad-slot">广告位 · AdSense 接入位</div>
+    </div>
+  </section>
+
+  <section id="overScreen" class="overlay hidden" aria-labelledby="overTitle">
+    <div class="panel">
+      <p class="over-kicker">本轮结束</p>
+      <h2 id="overTitle" class="over-title">差一点就碰到了</h2>
+      <div id="record" class="record">新纪录！</div>
+      <div id="finalScore" class="final-score">0</div>
+      <div class="final-label">最终得分</div>
+      <div class="result-meta">
+        <div><span>叠塔高度</span><b id="finalLevel">0 层</b></div>
+        <div><span>本次最高</span><b id="finalBest">0</b></div>
+      </div>
+      <button id="restartBtn" class="primary">再来一局</button>
+      <button id="shareBtn" class="secondary">分享战绩</button>
+      <button id="reviveBtn" class="reward">看广告复活一次</button>
+      <div class="ad-slot">广告位 · AdSense 接入位</div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast" role="status"></div>
+  <div id="live" class="sr-only" aria-live="assertive"></div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var canvas = document.getElementById('game');
+    var ctx = canvas.getContext('2d');
+    var hud = document.getElementById('hud');
+    var scoreEl = document.getElementById('score');
+    var levelEl = document.getElementById('level');
+    var comboEl = document.getElementById('combo');
+    var startScreen = document.getElementById('startScreen');
+    var overScreen = document.getElementById('overScreen');
+    var startBest = document.getElementById('startBest');
+    var finalScore = document.getElementById('finalScore');
+    var finalLevel = document.getElementById('finalLevel');
+    var finalBest = document.getElementById('finalBest');
+    var recordEl = document.getElementById('record');
+    var reviveBtn = document.getElementById('reviveBtn');
+    var muteBtn = document.getElementById('mute');
+    var toast = document.getElementById('toast');
+    var live = document.getElementById('live');
+
+    var W = 0, H = 0, dpr = 1;
+    var state = 'menu';
+    var blocks = [], current = null, debris = [], particles = [], floats = [];
+    var level = 0, score = 0, bonus = 0, combo = 0, best = 0;
+    var camera = 0, cameraTarget = 0, last = performance.now();
+    var shake = 0, pulse = 0, revived = false, pendingSpawn = 0;
+    var muted = false, audioCtx = null, toastTimer = null;
+    var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var stars = [];
+
+    function makeStars() {
+      stars = [];
+      var seed = 9731;
+      function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+      for (var i = 0; i < 90; i++) stars.push({ x: rnd(), y: rnd(), r: .5 + rnd() * 1.45, a: .3 + rnd() * .7 });
+    }
+
+    function resize() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (state === 'menu') setupPreview();
+    }
+
+    function setupPreview() {
+      var bw = Math.min(W * .54, 230);
+      blocks = [
+        { x: (W - bw) / 2, y: 0, w: bw, h: 35, hue: 195 },
+        { x: (W - bw * .83) / 2, y: 35, w: bw * .83, h: 35, hue: 153 },
+        { x: (W - bw * .68) / 2, y: 70, w: bw * .68, h: 35, hue: 49 },
+        { x: (W - bw * .52) / 2, y: 105, w: bw * .52, h: 35, hue: 24 },
+        { x: (W - bw * .35) / 2, y: 140, w: bw * .35, h: 35, hue: 5 }
+      ];
+      camera = 0;
+    }
+
+    function begin() {
+      unlockAudio();
+      level = 0; score = 0; bonus = 0; combo = 0; camera = 0; cameraTarget = 0;
+      debris = []; particles = []; floats = []; shake = 0; pulse = 0; revived = false; pendingSpawn = 0;
+      var bw = Math.min(W * .55, 240);
+      blocks = [{ x: (W - bw) / 2, y: 0, w: bw, h: blockHeight(), hue: 196 }];
+      state = 'playing';
+      startScreen.classList.add('hidden');
+      overScreen.classList.add('hidden');
+      hud.classList.add('visible');
+      reviveBtn.disabled = false;
+      updateHUD();
+      spawnBlock();
+      live.textContent = '游戏开始';
+    }
+
+    function blockHeight() { return Math.max(30, Math.min(39, H * .052)); }
+
+    function spawnBlock() {
+      var base = blocks[blocks.length - 1];
+      var fromLeft = level % 2 === 0;
+      var pad = 8;
+      current = {
+        x: fromLeft ? pad : W - base.w - pad,
+        y: base.y + blockHeight() + Math.max(112, H * .17),
+        targetY: base.y + blockHeight(),
+        w: base.w,
+        h: blockHeight(),
+        hue: (196 - (level + 1) * 17 + 720) % 360,
+        dir: fromLeft ? 1 : -1,
+        speed: Math.min(360, 116 + Math.floor(level / 10) * 28 + level * 1.35),
+        phase: 'sliding'
+      };
+    }
+
+    function drop() {
+      if (state !== 'playing' || !current || current.phase !== 'sliding') return;
+      unlockAudio();
+      current.phase = 'falling';
+      current.vy = -720;
+      bleep(180, .04, 'square', .035);
+    }
+
+    function land() {
+      var base = blocks[blocks.length - 1];
+      var curLeft = current.x;
+      var curRight = current.x + current.w;
+      var baseLeft = base.x;
+      var baseRight = base.x + base.w;
+      var overlapLeft = Math.max(curLeft, baseLeft);
+      var overlapRight = Math.min(curRight, baseRight);
+      var overlap = overlapRight - overlapLeft;
+      var centerDelta = Math.abs((curLeft + current.w / 2) - (baseLeft + base.w / 2));
+      var perfectThreshold = Math.max(5, Math.min(9, base.w * .045));
+
+      if (overlap <= 0) {
+        current.phase = 'missed';
+        current.vy = -120;
+        current.vx = current.dir * 55;
+        combo = 0;
+        updateHUD();
+        shake = reducedMotion ? 0 : 9;
+        bleep(90, .34, 'sawtooth', .05);
+        setTimeout(gameOver, 470);
+        return;
+      }
+
+      var perfect = centerDelta <= perfectThreshold;
+      if (perfect) {
+        current.x = base.x;
+        current.w = base.w;
+        combo += 1;
+        bonus += combo * 5;
+        burst(base.x + base.w / 2, worldToScreenY(current.targetY), current.hue);
+        floats.push({ x: base.x + base.w / 2, y: worldToScreenY(current.targetY) - 14, text: 'PERFECT!', life: 1, hue: current.hue });
+        pulse = reducedMotion ? .13 : .4;
+        bleep(680 + combo * 20, .09, 'sine', .06);
+        setTimeout(function () { bleep(920 + combo * 25, .07, 'sine', .035); }, 55);
+      } else {
+        combo = 0;
+        var cut;
+        if (curLeft < baseLeft) {
+          cut = { x: curLeft, y: current.targetY, w: baseLeft - curLeft, h: current.h, hue: current.hue, vx: -34 - Math.random() * 30, vy: 34, rot: 0, vr: -.8 };
+        } else {
+          cut = { x: baseRight, y: current.targetY, w: curRight - baseRight, h: current.h, hue: current.hue, vx: 34 + Math.random() * 30, vy: 34, rot: 0, vr: .8 };
+        }
+        if (cut.w > .5) debris.push(cut);
+        current.x = overlapLeft;
+        current.w = overlap;
+        shake = reducedMotion ? 0 : Math.min(6, 2 + centerDelta * .02);
+        sliceSparks(curLeft < baseLeft ? baseLeft : baseRight, worldToScreenY(current.targetY), current.hue);
+        bleep(250, .055, 'triangle', .035);
+      }
+
+      blocks.push({ x: current.x, y: current.targetY, w: current.w, h: current.h, hue: current.hue });
+      current = null;
+      level += 1;
+      score = level + bonus;
+      cameraTarget = Math.max(0, blocks[blocks.length - 1].y - H * .55);
+      updateHUD();
+      pendingSpawn = .15;
+    }
+
+    function gameOver() {
+      if (state !== 'playing') return;
+      state = 'gameover';
+      var isRecord = score > best;
+      if (isRecord) best = score;
+      startBest.textContent = best;
+      finalScore.textContent = score;
+      finalLevel.textContent = level + ' 层';
+      finalBest.textContent = best;
+      recordEl.classList.toggle('visible', isRecord && score > 0);
+      reviveBtn.disabled = revived;
+      overScreen.classList.remove('hidden');
+      hud.classList.remove('visible');
+      live.textContent = '游戏结束，得分 ' + score;
+    }
+
+    function revive() {
+      if (state !== 'gameover' || revived) return;
+      revived = true;
+      current = null;
+      debris = debris.filter(function (d) { return d !== current; });
+      state = 'playing';
+      overScreen.classList.add('hidden');
+      hud.classList.add('visible');
+      reviveBtn.disabled = true;
+      shake = 0;
+      pendingSpawn = .18;
+      showToast('复活成功，继续冲！');
+      live.textContent = '复活成功';
+    }
+
+    function requestRevive() {
+      if (revived) { showToast('每局只能复活一次'); return; }
+      if (typeof window.showRewardedAd === 'function') {
+        try {
+          window.showRewardedAd({ onReward: revive, onClose: function () {} });
+        } catch (e) { showToast('广告暂时不可用'); }
+      } else {
+        showToast('广告接入后可复活');
+      }
+    }
+    window.completeRewardedRevive = revive;
+
+    function updateHUD() {
+      scoreEl.textContent = score;
+      levelEl.textContent = '第 ' + level + ' 层';
+      if (combo >= 2) {
+        comboEl.textContent = '连击 ×' + combo;
+        comboEl.classList.add('visible');
+      } else comboEl.classList.remove('visible');
+    }
+
+    function worldToScreenY(y) { return H - 84 - (y - camera) - blockHeight(); }
+
+    function update(dt) {
+      if (state === 'playing') {
+        camera += (cameraTarget - camera) * Math.min(1, dt * 5.5);
+        if (pendingSpawn > 0) {
+          pendingSpawn -= dt;
+          if (pendingSpawn <= 0) spawnBlock();
+        }
+        if (current) {
+          if (current.phase === 'sliding') {
+            current.x += current.dir * current.speed * dt;
+            if (current.x <= 6) { current.x = 6; current.dir = 1; }
+            if (current.x + current.w >= W - 6) { current.x = W - 6 - current.w; current.dir = -1; }
+          } else if (current.phase === 'falling') {
+            current.y += current.vy * dt;
+            current.vy -= 1000 * dt;
+            if (current.y <= current.targetY) { current.y = current.targetY; land(); }
+          } else if (current.phase === 'missed') {
+            current.y += current.vy * dt; current.x += current.vx * dt; current.vy -= 950 * dt;
+          }
+        }
+      } else if (state === 'menu') {
+        camera = Math.sin(performance.now() / 2200) * 2;
+      }
+
+      for (var i = debris.length - 1; i >= 0; i--) {
+        var d = debris[i];
+        d.x += d.vx * dt; d.y += d.vy * dt; d.vy -= 900 * dt; d.rot += d.vr * dt;
+        if (worldToScreenY(d.y) > H + 180) debris.splice(i, 1);
+      }
+      for (var p = particles.length - 1; p >= 0; p--) {
+        var q = particles[p]; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 320 * dt; q.life -= dt * 1.25;
+        if (q.life <= 0) particles.splice(p, 1);
+      }
+      for (var f = floats.length - 1; f >= 0; f--) {
+        floats[f].y -= 34 * dt; floats[f].life -= dt * .85;
+        if (floats[f].life <= 0) floats.splice(f, 1);
+      }
+      shake *= Math.pow(.02, dt);
+      pulse = Math.max(0, pulse - dt * 1.7);
+    }
+
+    function bgStops() {
+      var t = Math.min(1, level / 42);
+      if (t < .28) return ['#59bdf0', '#d9f3ff', t / .28];
+      if (t < .55) return ['#ef875e', '#ffd283', (t - .28) / .27];
+      if (t < .78) return ['#4c3979', '#d2757d', (t - .55) / .23];
+      return ['#090d2b', '#322457', (t - .78) / .22];
+    }
+
+    function drawBackground() {
+      var stops = bgStops();
+      var g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, stops[0]); g.addColorStop(1, stops[1]);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      if (level < 12) {
+        var sunA = Math.max(0, 1 - level / 15);
+        ctx.globalAlpha = sunA * .85;
+        ctx.fillStyle = '#fff8c7'; ctx.beginPath(); ctx.arc(W * .78, H * .18, Math.min(W,H) * .065, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      if (level > 22) {
+        var a = Math.min(1, (level - 22) / 16);
+        for (var i = 0; i < stars.length; i++) {
+          var s = stars[i];
+          ctx.globalAlpha = a * s.a * (.75 + .25 * Math.sin(performance.now() * .0016 + i));
+          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+      if (level < 25) {
+        ctx.globalAlpha = .11;
+        ctx.fillStyle = '#fff';
+        for (var c = 0; c < 5; c++) {
+          var cx = ((c * 263 + performance.now() * .006) % (W + 180)) - 90;
+          var cy = H * (.19 + (c % 3) * .12);
+          ctx.beginPath(); ctx.ellipse(cx, cy, 54, 14, 0, 0, Math.PI * 2); ctx.ellipse(cx + 35, cy + 2, 38, 11, 0, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function drawBlock(b, isMoving) {
+      var sy = worldToScreenY(b.y);
+      var depth = Math.max(5, Math.min(8, b.h * .19));
+      var light = 'hsl(' + b.hue + ', 78%, 61%)';
+      var main = 'hsl(' + b.hue + ', 74%, 51%)';
+      var dark = 'hsl(' + b.hue + ', 67%, 36%)';
+      ctx.save();
+      if (isMoving) { ctx.shadowColor = 'rgba(0,0,0,.2)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 7; }
+      ctx.fillStyle = main; roundRect(ctx, b.x, sy, b.w, b.h, 3); ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = light;
+      ctx.beginPath(); ctx.moveTo(b.x, sy); ctx.lineTo(b.x + depth, sy - depth); ctx.lineTo(b.x + b.w + depth, sy - depth); ctx.lineTo(b.x + b.w, sy); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = dark;
+      ctx.beginPath(); ctx.moveTo(b.x + b.w, sy); ctx.lineTo(b.x + b.w + depth, sy - depth); ctx.lineTo(b.x + b.w + depth, sy + b.h - depth); ctx.lineTo(b.x + b.w, sy + b.h); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(b.x + 4, sy + 5, Math.max(0, b.w - 9), 2);
+      ctx.restore();
+    }
+
+    function drawDebris(d) {
+      var sy = worldToScreenY(d.y);
+      ctx.save(); ctx.translate(d.x + d.w / 2, sy + d.h / 2); ctx.rotate(d.rot); ctx.translate(-d.w / 2, -d.h / 2);
+      ctx.fillStyle = 'hsl(' + d.hue + ',74%,49%)'; ctx.fillRect(0, 0, d.w, d.h);
+      ctx.fillStyle = 'hsla(' + d.hue + ',80%,70%,.65)'; ctx.fillRect(0, 0, d.w, 4);
+      ctx.restore();
+    }
+
+    function drawParticles() {
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i]; ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = 'hsl(' + p.hue + ',90%,65%)';
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.life * 4); ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size); ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+      for (var f = 0; f < floats.length; f++) {
+        var q = floats[f]; ctx.globalAlpha = Math.max(0, q.life);
+        ctx.font = '900 ' + Math.min(26, W * .065) + 'px ui-rounded, system-ui'; ctx.textAlign = 'center';
+        ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(20,30,60,.25)'; ctx.strokeText(q.text, q.x, q.y);
+        ctx.fillStyle = '#fff8a7'; ctx.fillText(q.text, q.x, q.y);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function draw() {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawBackground();
+      var sx = shake ? (Math.random() - .5) * shake : 0;
+      var sy = shake ? (Math.random() - .5) * shake : 0;
+      ctx.save(); ctx.translate(sx, sy);
+
+      ctx.fillStyle = 'rgba(7,20,45,.13)';
+      ctx.beginPath(); ctx.ellipse(W/2, H - 68, Math.min(W*.38, 180), 17, 0, 0, Math.PI*2); ctx.fill();
+
+      var start = Math.max(0, blocks.length - 30);
+      for (var i = start; i < blocks.length; i++) drawBlock(blocks[i], false);
+      for (var j = 0; j < debris.length; j++) drawDebris(debris[j]);
+      if (current) drawBlock(current, current.phase === 'sliding');
+      drawParticles();
+      ctx.restore();
+
+      if (state === 'playing' && current && current.phase === 'sliding') {
+        ctx.globalAlpha = .75;
+        ctx.fillStyle = '#fff';
+        ctx.font = '800 12px ui-rounded, system-ui'; ctx.textAlign = 'center';
+        ctx.fillText('点击落下', W/2, Math.max(102, worldToScreenY(current.y) - 23));
+        ctx.globalAlpha = 1;
+      }
+      if (pulse > 0) { ctx.globalAlpha = pulse; ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H); ctx.globalAlpha = 1; }
+    }
+
+    function loop(now) {
+      var dt = Math.min(.033, (now - last) / 1000 || .016);
+      last = now; update(dt); draw(); requestAnimationFrame(loop);
+    }
+
+    function roundRect(c, x, y, w, h, r) {
+      r = Math.min(r, w/2, h/2); c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
+    }
+
+    function burst(x, y, hue) {
+      for (var i=0; i<28; i++) {
+        var a = Math.random()*Math.PI*2, sp = 70+Math.random()*190;
+        particles.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-90,life:.65+Math.random()*.35,size:3+Math.random()*6,hue:(hue+Math.random()*50-25+360)%360});
+      }
+    }
+    function sliceSparks(x,y,hue) {
+      for (var i=0; i<9; i++) particles.push({x:x,y:y,vx:(Math.random()-.5)*110,vy:-30-Math.random()*100,life:.35+Math.random()*.25,size:2+Math.random()*3,hue:hue});
+    }
+
+    function unlockAudio() {
+      if (muted) return;
+      if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return; } }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    function bleep(freq, duration, type, volume) {
+      if (muted || !audioCtx) return;
+      try {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain(), now = audioCtx.currentTime;
+        o.type = type || 'sine'; o.frequency.setValueAtTime(freq, now); o.frequency.exponentialRampToValueAtTime(Math.max(40,freq*.82), now+duration);
+        g.gain.setValueAtTime(volume || .04, now); g.gain.exponentialRampToValueAtTime(.0001, now+duration);
+        o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+duration+.015);
+      } catch(e) {}
+    }
+
+    function showToast(text) {
+      toast.textContent = text; toast.classList.add('visible'); clearTimeout(toastTimer);
+      toastTimer = setTimeout(function(){ toast.classList.remove('visible'); }, 1900);
+    }
+
+    function shareScore() {
+      var text = '我在《冲天塔》叠了' + level + '层！你来挑战';
+      if (navigator.share) {
+        navigator.share({ title: '冲天塔', text: text }).catch(function(err){ if (err && err.name !== 'AbortError') copyText(text); });
+      } else copyText(text);
+    }
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function(){showToast('战绩已复制');}, function(){ legacyCopy(text); });
+      } else legacyCopy(text);
+    }
+    function legacyCopy(text) {
+      var ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); showToast('战绩已复制'); } catch(e) { showToast(text); }
+      document.body.removeChild(ta);
+    }
+
+    document.getElementById('startBtn').addEventListener('click', begin);
+    document.getElementById('restartBtn').addEventListener('click', begin);
+    document.getElementById('shareBtn').addEventListener('click', shareScore);
+    reviveBtn.addEventListener('click', requestRevive);
+    muteBtn.addEventListener('click', function(e){
+      e.stopPropagation(); muted = !muted; muteBtn.textContent = muted ? '—' : '♫'; muteBtn.setAttribute('aria-label', muted ? '打开声音' : '关闭声音');
+      if (!muted) { unlockAudio(); bleep(440,.05,'sine',.04); }
+    });
+    canvas.addEventListener('pointerdown', function(e){ e.preventDefault(); drop(); });
+    document.addEventListener('keydown', function(e){
+      if (e.code === 'Space') { e.preventDefault(); if (state === 'menu') begin(); else if (state === 'playing') drop(); else if (state === 'gameover') begin(); }
+    });
+    document.addEventListener('touchmove', function(e){ e.preventDefault(); }, { passive:false });
+    window.addEventListener('resize', resize);
+    document.addEventListener('visibilitychange', function(){ last = performance.now(); });
+
+    makeStars(); resize(); requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>
