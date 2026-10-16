@@ -566,6 +566,11 @@ def main():
         shutil.rmtree(OUT)
     OUT.mkdir()
     urls = []
+    # 游戏:把仓库 game/ 目录原样复制到 dist/game/
+    game_src = ROOT / "game"
+    if game_src.is_dir():
+        shutil.copytree(game_src, OUT / "game", dirs_exist_ok=True)
+        urls.append("/game/")
     write(cfg, "/", home_page(cfg, dates, rates), urls)
     for path, page in calc.pages(cfg, ad_slot(cfg)):
         write(cfg, path, page, urls)
