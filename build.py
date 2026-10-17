@@ -571,6 +571,11 @@ def main():
     if game_src.is_dir():
         shutil.copytree(game_src, OUT / "game", dirs_exist_ok=True)
         urls.append("/game/")
+    # 隐私政策页:把仓库 privacy/ 目录原样复制到 dist/privacy/
+    privacy_src = ROOT / "privacy"
+    if privacy_src.is_dir():
+        shutil.copytree(privacy_src, OUT / "privacy", dirs_exist_ok=True)
+        urls.append("/privacy/")
     write(cfg, "/", home_page(cfg, dates, rates), urls)
     for path, page in calc.pages(cfg, ad_slot(cfg)):
         write(cfg, path, page, urls)
