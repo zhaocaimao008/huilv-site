@@ -139,6 +139,8 @@
     .reward[disabled] { opacity: .45; cursor: default; }
     .hint { display: flex; justify-content: center; gap: 12px; margin: 21px 0 16px; color: var(--muted); font-size: 12px; font-weight: 700; }
     .hint span { display: inline-flex; align-items: center; gap: 5px; }
+    .app-link { margin: -6px 0 14px; }
+    .app-link a { color: var(--secondary); font-size: 13px; font-weight: 800; text-decoration: none; }
     .tap-icon { width: 19px; height: 24px; border: 2px solid currentColor; border-radius: 10px; display: inline-block; position: relative; }
     .tap-icon::after { content: ""; position: absolute; width: 3px; height: 6px; border-radius: 3px; background: currentColor; top: 4px; left: 6px; }
     .ad-slot { margin-top: 14px; min-height: 42px; display: grid; place-items: center; border: 1px dashed color-mix(in srgb, var(--muted) 38%, transparent); border-radius: 8px; background: var(--ad); color: var(--muted); font-size: 10px; letter-spacing: .12em; }
@@ -211,6 +213,7 @@
       <p class="best-line">Best <b id="startBest">0</b></p>
       <button id="startBtn" class="primary">Tap to Start</button>
       <div class="hint"><span><i class="tap-icon" aria-hidden="true"></i> Tap screen</span><span>or press Space</span></div>
+      <div class="app-link"><a href="download.html">📱 Get the Android App</a></div>
       <div class="ad-slot">
         <ins class="adsbygoogle"
              style="display:block"
