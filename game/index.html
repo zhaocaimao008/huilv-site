@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#0d71bb" />
   <meta name="color-scheme" content="light dark" />
   <link rel="icon" href="data:," />
-  <title>冲天塔</title>
+  <title>Sky Tower</title>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2490012576999564" crossorigin="anonymous"></script>
   <style>
     :root {
@@ -192,25 +192,25 @@
   </style>
 </head>
 <body>
-  <canvas id="game" aria-label="冲天塔游戏画布"></canvas>
+  <canvas id="game" aria-label="Sky Tower game canvas"></canvas>
 
   <div class="safe-ui">
     <div id="hud" class="hud" aria-live="polite">
-      <div id="level" class="level-pill">第 0 层</div>
-      <div class="score-wrap"><span class="score-label">得分</span><span id="score">0</span></div>
-      <div id="combo" class="combo-pill">连击 ×2</div>
+      <div id="level" class="level-pill">Level 0</div>
+      <div class="score-wrap"><span class="score-label">Score</span><span id="score">0</span></div>
+      <div id="combo" class="combo-pill">Combo ×2</div>
     </div>
   </div>
-  <button id="mute" class="mute" aria-label="关闭声音" title="声音开关">♫</button>
+  <button id="mute" class="mute" aria-label="Mute" title="Sound toggle">♫</button>
 
   <section id="startScreen" class="overlay" aria-labelledby="title">
     <div class="panel">
       <div class="tower-mark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
-      <h1 id="title">冲天塔</h1>
-      <p class="tagline">点一下，落方块，叠得越高分越高</p>
-      <p class="best-line">本次最高 <b id="startBest">0</b> 分</p>
-      <button id="startBtn" class="primary">点击开始</button>
-      <div class="hint"><span><i class="tap-icon" aria-hidden="true"></i> 点击屏幕</span><span>或按空格键</span></div>
+      <h1 id="title">Sky Tower</h1>
+      <p class="tagline">Tap to drop blocks — stack higher, score higher</p>
+      <p class="best-line">Best <b id="startBest">0</b></p>
+      <button id="startBtn" class="primary">Tap to Start</button>
+      <div class="hint"><span><i class="tap-icon" aria-hidden="true"></i> Tap screen</span><span>or press Space</span></div>
       <div class="ad-slot">
         <ins class="adsbygoogle"
              style="display:block"
@@ -224,18 +224,18 @@
 
   <section id="overScreen" class="overlay hidden" aria-labelledby="overTitle">
     <div class="panel">
-      <p class="over-kicker">本轮结束</p>
-      <h2 id="overTitle" class="over-title">差一点就碰到了</h2>
-      <div id="record" class="record">新纪录！</div>
+      <p class="over-kicker">Game Over</p>
+      <h2 id="overTitle" class="over-title">So close!</h2>
+      <div id="record" class="record">New Record!</div>
       <div id="finalScore" class="final-score">0</div>
-      <div class="final-label">最终得分</div>
+      <div class="final-label">Final Score</div>
       <div class="result-meta">
-        <div><span>叠塔高度</span><b id="finalLevel">0 层</b></div>
-        <div><span>本次最高</span><b id="finalBest">0</b></div>
+        <div><span>Tower Height</span><b id="finalLevel">0 levels</b></div>
+        <div><span>Best</span><b id="finalBest">0</b></div>
       </div>
-      <button id="restartBtn" class="primary">再来一局</button>
-      <button id="shareBtn" class="secondary">分享战绩</button>
-      <button id="reviveBtn" class="reward">看广告复活一次</button>
+      <button id="restartBtn" class="primary">Play Again</button>
+      <button id="shareBtn" class="secondary">Share Score</button>
+      <button id="reviveBtn" class="reward">Watch Ad to Revive</button>
       <div class="ad-slot">
         <ins class="adsbygoogle"
              style="display:block"
@@ -326,7 +326,7 @@
       reviveBtn.disabled = false;
       updateHUD();
       spawnBlock();
-      live.textContent = '游戏开始';
+      live.textContent = 'Game started';
     }
 
     function blockHeight() { return Math.max(30, Math.min(39, H * .052)); }
@@ -423,13 +423,13 @@
       if (isRecord) best = score;
       startBest.textContent = best;
       finalScore.textContent = score;
-      finalLevel.textContent = level + ' 层';
+      finalLevel.textContent = level + ' levels';
       finalBest.textContent = best;
       recordEl.classList.toggle('visible', isRecord && score > 0);
       reviveBtn.disabled = revived;
       overScreen.classList.remove('hidden');
       hud.classList.remove('visible');
-      live.textContent = '游戏结束，得分 ' + score;
+      live.textContent = 'Game over, score ' + score;
     }
 
     function revive() {
@@ -443,27 +443,27 @@
       reviveBtn.disabled = true;
       shake = 0;
       pendingSpawn = .18;
-      showToast('复活成功，继续冲！');
-      live.textContent = '复活成功';
+      showToast('Revived \u2014 keep stacking!');
+      live.textContent = 'Revived';
     }
 
     function requestRevive() {
-      if (revived) { showToast('每局只能复活一次'); return; }
+      if (revived) { showToast('Only one revive per game'); return; }
       if (typeof window.showRewardedAd === 'function') {
         try {
           window.showRewardedAd({ onReward: revive, onClose: function () {} });
-        } catch (e) { showToast('广告暂时不可用'); }
+        } catch (e) { showToast('Ads temporarily unavailable'); }
       } else {
-        showToast('广告接入后可复活');
+        showToast('Revive available once ads are connected');
       }
     }
     window.completeRewardedRevive = revive;
 
     function updateHUD() {
       scoreEl.textContent = score;
-      levelEl.textContent = '第 ' + level + ' 层';
+      levelEl.textContent = 'Level ' + level;
       if (combo >= 2) {
-        comboEl.textContent = '连击 ×' + combo;
+        comboEl.textContent = 'Combo \u00d7' + combo;
         comboEl.classList.add('visible');
       } else comboEl.classList.remove('visible');
     }
@@ -614,7 +614,7 @@
         ctx.globalAlpha = .75;
         ctx.fillStyle = '#fff';
         ctx.font = '800 12px ui-rounded, system-ui'; ctx.textAlign = 'center';
-        ctx.fillText('点击落下', W/2, Math.max(102, worldToScreenY(current.y) - 23));
+        ctx.fillText('Tap to drop', W/2, Math.max(102, worldToScreenY(current.y) - 23));
         ctx.globalAlpha = 1;
       }
       if (pulse > 0) { ctx.globalAlpha = pulse; ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H); ctx.globalAlpha = 1; }
@@ -660,19 +660,19 @@
     }
 
     function shareScore() {
-      var text = '我在《冲天塔》叠了' + level + '层！你来挑战';
+      var text = 'I stacked ' + level + ' levels in Sky Tower! Beat me!';
       if (navigator.share) {
-        navigator.share({ title: '冲天塔', text: text }).catch(function(err){ if (err && err.name !== 'AbortError') copyText(text); });
+        navigator.share({ title: 'Sky Tower', text: text }).catch(function(err){ if (err && err.name !== 'AbortError') copyText(text); });
       } else copyText(text);
     }
     function copyText(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(function(){showToast('战绩已复制');}, function(){ legacyCopy(text); });
+        navigator.clipboard.writeText(text).then(function(){showToast('Score copied');}, function(){ legacyCopy(text); });
       } else legacyCopy(text);
     }
     function legacyCopy(text) {
       var ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); showToast('战绩已复制'); } catch(e) { showToast(text); }
+      try { document.execCommand('copy'); showToast('Score copied'); } catch(e) { showToast(text); }
       document.body.removeChild(ta);
     }
 
@@ -681,7 +681,7 @@
     document.getElementById('shareBtn').addEventListener('click', shareScore);
     reviveBtn.addEventListener('click', requestRevive);
     muteBtn.addEventListener('click', function(e){
-      e.stopPropagation(); muted = !muted; muteBtn.textContent = muted ? '—' : '♫'; muteBtn.setAttribute('aria-label', muted ? '打开声音' : '关闭声音');
+      e.stopPropagation(); muted = !muted; muteBtn.textContent = muted ? '—' : '♫'; muteBtn.setAttribute('aria-label', muted ? 'Unmute' : 'Mute');
       if (!muted) { unlockAudio(); bleep(440,.05,'sine',.04); }
     });
     canvas.addEventListener('pointerdown', function(e){ e.preventDefault(); drop(); });
