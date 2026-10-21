@@ -727,7 +727,7 @@ def contact_page(cfg):
     body = """
 <div class="card"><h1>联系我们</h1>
 <p>有任何问题或建议,欢迎发邮件联系我们:</p>
-<p>邮箱:<a href="mailto:webmaster@718168.com">webmaster@718168.com</a></p>
+<p>邮箱:<a href="mailto:chatporttop@proton.me">chatporttop@proton.me</a></p>
 <p>以下情况尤其欢迎来信:</p>
 <ul>
 <li>发现某个页面的汇率、计算结果或文章内容有错误;</li>
@@ -736,7 +736,7 @@ def contact_page(cfg):
 </ul>
 <p class="muted">我们一般会在两个工作日内回复。来信时请尽量写清页面地址和问题描述,方便我们定位。本站不通过电话、微信等方式提供客服,也不会以任何名义向你收取费用或索要账户、密码,谨防冒充。</p>
 <p>关于本站的数据来源与免责声明,见<a href="/about.html">关于本站</a>。</p></div>"""
-    return "联系我们 - 今日汇率换算", "今日汇率换算(718168.com)联系方式:数据纠错、功能建议与内容合作,请发送邮件至 webmaster@718168.com。", body
+    return "联系我们 - 今日汇率换算", "今日汇率换算(718168.com)联系方式:数据纠错、功能建议与内容合作,请发送邮件至 chatporttop@proton.me。", body
 
 
 def write_file(cfg, path, page, urls):
